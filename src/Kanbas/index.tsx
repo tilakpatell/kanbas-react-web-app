@@ -1,8 +1,8 @@
 import { Routes, Route, Navigate } from "react-router";
 import Account from "./Account";
 import Dashboard from "./Dashboard";
-import KanbasNavigation from "./Account/Navigation";
 import Courses from "./Courses";
+import KanbasNavigation from "./Navigation";
 export default function Kanbas() {
   return (
     <div id="wd-kanbas">
