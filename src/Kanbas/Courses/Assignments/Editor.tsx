@@ -1,6 +1,7 @@
 export default function AssignmentEditor() {
   return (
     <div id="wd-assignments-editor">
+      <label htmlFor="wd-name"><strong>Assignment Name</strong><br/></label>
       <input id="wd-name" value="A1 - ENV + HTML" />
       <br />
       <br />
@@ -59,17 +60,15 @@ export default function AssignmentEditor() {
         <br />
         <tr>
           <td align="right" valign="top">
-            Online Entry Options
           </td>
           <td>
+            <br/>Online Entry Options<br/>
             <input type="checkbox" name="check-genre" id="wd-text-entry" />
             <label htmlFor="wd-chkbox-text-entry">Text Entry</label>
             <br />
-
             <input type="checkbox" name="check-genre" id="wd-website-url" />
             <label htmlFor="wd-chkbox-website-url">Website URL</label>
             <br />
-
             <input
               type="checkbox"
               name="check-genre"
@@ -77,7 +76,6 @@ export default function AssignmentEditor() {
             />
             <label htmlFor="wd-chkbox-media-recording">Media Recordings</label>
             <br />
-
             <input
               type="checkbox"
               name="check-genre"
@@ -87,7 +85,6 @@ export default function AssignmentEditor() {
               Student Annotation
             </label>
             <br />
-
             <input type="checkbox" name="check-genre" id="wd-file-upload" />
             <label htmlFor="wd-file-upload">File Uploads</label>
           </td>
@@ -112,19 +109,12 @@ export default function AssignmentEditor() {
         </tr>
         <br />
         <tr>
-          <td align="right" valign="top">
-            <label htmlFor="wd-available-from">Available from</label>
-          </td>
           <td>
+            <label htmlFor="wd-available-from">Available from</label>
             <input type="date" id="wd-available-from" value="Everyone" />
           </td>
-        </tr>
-        <br />
-        <tr>
-          <td align="right" valign="top">
-            <label htmlFor="wd-available-until">Until</label>
-          </td>
           <td>
+            <label htmlFor="wd-available-until">Until</label>
             <input type="date" id="wd-available-until" value="Everyone" />
           </td>
         </tr>
