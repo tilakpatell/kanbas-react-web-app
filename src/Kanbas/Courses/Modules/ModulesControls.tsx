@@ -42,7 +42,6 @@ export default function ModulesControls() {
           </li>
         </ul>
       </div>
-
       <button id="wd-view-progress" className="btn btn-lg me-1 btn-secondary float-end">
         View Progress
       </button>
