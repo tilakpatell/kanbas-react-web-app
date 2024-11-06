@@ -1,12 +1,35 @@
-import React from 'react';
-import { FaPlus, FaSearch, FaCheckCircle, FaEllipsisV, FaBookOpen } from "react-icons/fa"; 
+import React, { useState } from 'react';
+import { FaPlus, FaSearch, FaCheckCircle, FaEllipsisV, FaBookOpen, FaTrash } from "react-icons/fa"; 
 import { BsGripVertical } from "react-icons/bs";
-import { useParams } from 'react-router';
-import { assignments } from '../../Database'; 
+import { useParams, Link } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { deleteAssignment } from './reducer';
 
 export default function Assignments() {
-  const { cid } = useParams(); 
-  const courseAssignments = assignments.filter(assignment => assignment.course === cid);
+  const { cid } = useParams();
+  const dispatch = useDispatch();
+  const assignmentsState = useSelector((state: any) => state.assignmentReducer) || { assignments: [] };
+  const { assignments } = assignmentsState;
+  
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [assignmentToDelete, setAssignmentToDelete] = useState<any>(null);
+
+  const courseAssignments = assignments.filter(
+    (assignment: any) => assignment.course === cid
+  );
+
+  const handleDeleteClick = (assignment: any) => {
+    setAssignmentToDelete(assignment);
+    setShowDeleteDialog(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (assignmentToDelete) {
+      dispatch(deleteAssignment(assignmentToDelete._id));
+      setShowDeleteDialog(false);
+      setAssignmentToDelete(null);
+    }
+  };
 
   return (
     <div id="wd-assignments" className="container mt-4">
@@ -23,7 +46,9 @@ export default function Assignments() {
           </div>
         </div>
         <button className="btn btn-secondary me-2">+ Group</button>
-        <button className="btn btn-danger">+ Assignment</button>
+        <Link to={`/Kanbas/Courses/${cid}/Assignments/new`} className="btn btn-danger">
+          + Assignment
+        </Link>
       </div>
 
       <div className="card bg-light">
@@ -36,27 +61,27 @@ export default function Assignments() {
             <span className="badge rounded-pill text-dark px-3 py-2" style={{ border: '2px solid gray', borderRadius: '25px' }}>
               40% Finished
             </span>
-            <button className="btn btn-outline-secondary btn-sm ms-3">
+            <Link to={`/Kanbas/Courses/${cid}/Assignments/new`} className="btn btn-outline-secondary btn-sm ms-3">
               <FaPlus />
-            </button>
+            </Link>
           </div>
         </div>
 
         <ul className="list-group list-group-flush">
           {courseAssignments.length > 0 ? (
-            courseAssignments.map((assignment) => (
+            courseAssignments.map((assignment: any) => (
               <li key={assignment._id} className="list-group-item bg-light py-4">
                 <div className="d-flex align-items-center">
                   <BsGripVertical className="me-2 text-muted" size={25} />
                   <FaBookOpen className="text-muted me-3" size={25} />
                   <div className="flex-grow-1">
                     <div className="mb-1">
-                      <a
-                        href={`#/Kanbas/Courses/${cid}/Assignments/${assignment._id}`}
+                      <Link
+                        to={`/Kanbas/Courses/${cid}/Assignments/${assignment._id}`}
                         className="text-decoration-none"
                       >
                         <strong>{assignment.title}</strong>
-                      </a>
+                      </Link>
                     </div>
                     <div>
                       <span className="text-danger">Multiple Modules</span>
@@ -64,11 +89,17 @@ export default function Assignments() {
                       <span className="text-secondary">{assignment.availableFrom}</span>
                     </div>
                     <div className="text-muted">
-                      Due {assignment.dueDate} | 100 pts
+                      Due {assignment.dueDate} | {assignment.points} pts
                     </div>
                   </div>
                   <div className="d-flex align-items-center">
                     <FaCheckCircle className="text-success me-3" size={25} />
+                    <button 
+                      className="btn btn-link text-danger me-2"
+                      onClick={() => handleDeleteClick(assignment)}
+                    >
+                      <FaTrash />
+                    </button>
                     <FaEllipsisV className="text-muted" />
                   </div>
                 </div>
@@ -79,6 +110,29 @@ export default function Assignments() {
           )}
         </ul>
       </div>
+      {showDeleteDialog && (
+        <div className="modal d-block" tabIndex={-1} role="dialog" style={{backgroundColor: 'rgba(0,0,0,0.5)'}}>
+          <div className="modal-dialog" role="document">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Delete Assignment</h5>
+                <button type="button" className="btn-close" onClick={() => setShowDeleteDialog(false)}></button>
+              </div>
+              <div className="modal-body">
+                <p>Are you sure you want to delete "{assignmentToDelete?.title}"?</p>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setShowDeleteDialog(false)}>
+                  Cancel
+                </button>
+                <button type="button" className="btn btn-danger" onClick={handleConfirmDelete}>
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

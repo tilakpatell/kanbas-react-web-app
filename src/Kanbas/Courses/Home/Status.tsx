@@ -14,7 +14,7 @@ export default function CourseStatus() {
       <h2>Course Status</h2>
       <div className="d-flex">
         <div className="w-50 pe-1">
-          <button className="btn btn-lg btn-secondary w-100 text-nowrap text-center ">
+          <button className="btn btn-lg btn-secondary w-100 text-nowrap text-center">
             <MdDoNotDisturbAlt className="me-2 fs-5" /> Unpublish
           </button>
         </div>
