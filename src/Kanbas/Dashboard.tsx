@@ -1,7 +1,14 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { enroll, unenroll } from "./Courses/Enrollments/reducer";
+import {
+  addEnrollment,
+  removeEnrollment,
+  setEnrollments,
+} from "./Courses/Enrollments/reducer";
+import * as enrollmentClient from "./Courses/Enrollments/client";
+import { fetchAllCourses } from "./Courses/client";
+import { useEffect } from "react";
 
 export default function Dashboard({
   courses,
@@ -18,6 +25,7 @@ export default function Dashboard({
   deleteCourse: (course: any) => void;
   updateCourse: () => void;
 }) {
+  const [allCourses, setAllCourses] = useState<any[]>([]);
   const [showAllCourses, setShowAllCourses] = useState(false);
   const dispatch = useDispatch();
   const { currentUser } = useSelector((state: any) => state.accountReducer);
@@ -30,11 +38,63 @@ export default function Dashboard({
     );
   };
 
-  const displayedCourses =
-    showAllCourses || currentUser.role === "FACULTY"
-      ? courses
-      : courses.filter((course) => isEnrolled(course._id));
+  const handleEnroll = async (courseId: string) => {
+    try {
+      await enrollmentClient.enrollInCourse(currentUser._id, courseId);
+      dispatch(
+        addEnrollment({
+          user: currentUser._id,
+          course: courseId,
+        })
+      );
+    } catch (error) {
+      console.error("Failed to enroll:", error);
+    }
+  };
 
+  const handleUnenroll = async (courseId: string) => {
+    try {
+      await enrollmentClient.unenrollFromCourse(currentUser._id, courseId);
+      dispatch(
+        removeEnrollment({
+          user: currentUser._id,
+          course: courseId,
+        })
+      );
+    } catch (error) {
+      console.error("Failed to unenroll:", error);
+    }
+  };
+
+  const displayedCourses = showAllCourses
+    ? allCourses
+    : courses.filter((course) => isEnrolled(course._id));
+
+    const handleShowAllCourses = async () => {
+      setShowAllCourses((prev) => !prev);
+      if (!showAllCourses) {
+        try {
+          const data = await fetchAllCourses(); 
+          setAllCourses(data);
+        } catch (error) {
+          console.error("Failed to fetch all courses:", error);
+        }
+      }
+    };
+    
+    useEffect(() => {
+      const loadEnrollments = async () => {
+        try {
+          const data = await enrollmentClient.setEnrollments(); // Fetch user-specific enrollments
+          dispatch(setEnrollments(data));
+        } catch (error) {
+          console.error("Failed to load enrollments:", error);
+        }
+      };
+      loadEnrollments();
+    }, [dispatch, currentUser._id]);
+
+    
   return (
     <div id="wd-dashboard">
       {currentUser.role === "FACULTY" && (
@@ -75,10 +135,7 @@ export default function Dashboard({
       {currentUser.role === "STUDENT" && (
         <div className="d-flex justify-content-between align-items-center">
           <h1>Dashboard</h1>
-          <button
-            className="btn btn-primary"
-            onClick={() => setShowAllCourses(!showAllCourses)}
-          >
+          <button className="btn btn-primary" onClick={handleShowAllCourses}>
             {showAllCourses ? "Show Enrolled" : "Show All Courses"}
           </button>
         </div>
@@ -136,14 +193,7 @@ export default function Dashboard({
                           </Link>
                           <button
                             className="btn btn-danger"
-                            onClick={() =>
-                              dispatch(
-                                unenroll({
-                                  user: currentUser._id,
-                                  course: course._id,
-                                } as any)
-                              )
-                            }
+                            onClick={() => handleUnenroll(course._id)}
                           >
                             Unenroll
                           </button>
@@ -151,14 +201,7 @@ export default function Dashboard({
                       ) : (
                         <button
                           className="btn btn-success"
-                          onClick={() =>
-                            dispatch(
-                              enroll({
-                                user: currentUser._id,
-                                course: course._id,
-                              } as any)
-                            )
-                          }
+                          onClick={() => handleEnroll(course._id)}
                         >
                           Enroll
                         </button>

@@ -1,14 +1,17 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { FaCalendarAlt, FaTimes } from 'react-icons/fa';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { addAssignment, updateAssignment } from './reducer';
+import * as client from "./client";
+import * as coursesClient from "../client";
 
 export default function AssignmentEditor() {
   const { cid, aid } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   
+  const { currentUser } = useSelector((state: any) => state.accountReducer);
   const assignmentList = useSelector((state: any) => 
     state.assignmentReducer?.assignments || []
   );
@@ -16,7 +19,7 @@ export default function AssignmentEditor() {
   const existingAssignment = aid !== 'new' ? 
     assignmentList.find((a: any) => a._id === aid) : null;
   
-  const [assignment, setAssignment] = React.useState(existingAssignment || {
+  const [assignment, setAssignment] = useState(existingAssignment || {
     _id: '',
     title: '',
     description: '',
@@ -27,15 +30,27 @@ export default function AssignmentEditor() {
     course: cid,
   });
 
-  const handleSave = () => {
-    if (assignment.title) {
+  useEffect(() => {
+    if (currentUser?.role !== "FACULTY") {
+      navigate(`/Kanbas/Courses/${cid}/Assignments`);
+    }
+  }, [currentUser, navigate, cid]);
+
+  if (currentUser?.role !== "FACULTY") {
+    return null;
+  }
+
+  const handleSave = async () => {
+    if (assignment.title && currentUser.role === "FACULTY") {
       if (aid === 'new') {
-        dispatch(addAssignment({
-          ...assignment,
-          _id: new Date().getTime().toString()
-        }));
+        const newAssignment = await coursesClient.createAssignmentForCourse(
+          cid as string, 
+          assignment
+        );
+        dispatch(addAssignment(newAssignment));
       } else {
-        dispatch(updateAssignment(assignment));
+        const updatedAssignment = await client.updateAssignment(assignment);
+        dispatch(updateAssignment(updatedAssignment));
       }
       navigate(`/Kanbas/Courses/${cid}/Assignments`);
     }

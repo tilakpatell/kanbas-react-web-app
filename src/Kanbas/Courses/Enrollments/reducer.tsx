@@ -1,32 +1,37 @@
+// src/Kanbas/Enrollments/reducer.tsx
 import { createSlice } from "@reduxjs/toolkit";
-import { enrollments as enrollmentsData } from "../../Database";
 
 const initialState = {
-  enrollments: enrollmentsData,
+  enrollments: [] as any[],
 };
 
 const enrollmentsSlice = createSlice({
   name: "enrollments",
   initialState,
   reducers: {
-    enroll: (state: any, action: any) => {
+    setEnrollments: (state, action) => {
+      state.enrollments = action.payload;
+    },
+    
+    addEnrollment: (state, { payload }) => {
       const newEnrollment = {
         _id: new Date().getTime().toString(),
-        user: action.payload.user,
-        course: action.payload.course
+        user: payload.user,
+        course: payload.course,
       };
-      state.enrollments = [...state.enrollments, newEnrollment];
+      state.enrollments = [...state.enrollments, newEnrollment] as any;
     },
-    unenroll: (state: any, action: any) => {
+
+    removeEnrollment: (state, { payload }) => {
       state.enrollments = state.enrollments.filter(
         (enrollment: any) => !(
-          enrollment.user === action.payload.user && 
-          enrollment.course === action.payload.course
+          enrollment.user === payload.user && 
+          enrollment.course === payload.course
         )
       );
     }
-  }
+  },
 });
 
-export const { enroll, unenroll } = enrollmentsSlice.actions;
+export const { setEnrollments, addEnrollment, removeEnrollment } = enrollmentsSlice.actions;
 export default enrollmentsSlice.reducer;

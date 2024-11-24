@@ -1,38 +1,59 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import Dashboard from "./Dashboard";
 import Courses from "./Courses";
-import * as db from "./Database";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./styles.css"
 import KanbasNavigation from "./KanbasNavigation";
 import Account from "./Account";
+import * as userClient from "./Account/client";
 import ProtectedRoute from "./Account/ProtectedRoute";
+import Session from "./Account/Session";
+import { useSelector } from "react-redux";
+import * as courseClient from "./Courses/client";
+
+
 
 
 export default function Kanbas() {
-  const [courses, setCourses] = useState<any[]>(db.courses);
+  const [courses, setCourses] = useState<any[]>([]);
   const [course, setCourse] = useState<any>({
     _id: "1234", name: "New Course", number: "New Number",
     startDate: "2023-09-10", endDate: "2023-12-15", description: "New Description",
   });
-  const addNewCourse = () => {
-    setCourses([...courses, { ...course, _id: new Date().getTime().toString() }]);
+  const addNewCourse = async () => {
+    const newCourse = await userClient.createCourse(course);
+    setCourses([ ...courses, newCourse ]);
   };
-  const deleteCourse = (courseId: any) => {
+
+  const deleteCourse = async (courseId: string) => {
+    const status = await courseClient.deleteCourse(courseId);
     setCourses(courses.filter((course) => course._id !== courseId));
   };
-  const updateCourse = () => {
-    setCourses(
-      courses.map((c) => {
-        if (c._id === course._id) {
-          return course;
-        } else {
-          return c;
-        }
-      })
-    );
+
+  const updateCourse = async () => {
+    await courseClient.updateCourse(course);
+    setCourses(courses.map((c) => {
+        if (c._id === course._id) { return course; }
+        else { return c; }
+    })
+  );};
+
+  const { currentUser } = useSelector((state: any) => state.accountReducer);
+  const fetchCourses = async () => {
+    try {
+      const courses = await userClient.findMyCourses();
+      setCourses(courses);
+    } catch (error) {
+      console.error(error);
+    }
   };
+  useEffect(() => {
+    fetchCourses();
+  }, [currentUser]);
+
+  
   return (
+    <Session>
     <div id="wd-kanbas">
       <KanbasNavigation />
       <div className="wd-main-content-offset p-3">
@@ -54,4 +75,6 @@ export default function Kanbas() {
           <Route path="/Inbox" element={<h1>Inbox</h1>} />
         </Routes>
       </div>
-    </div>);}
+    </div>
+  </Session>
+  );}
