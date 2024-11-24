@@ -1,14 +1,9 @@
 import { Link } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import {
-  addEnrollment,
-  removeEnrollment,
-  setEnrollments,
-} from "./Courses/Enrollments/reducer";
+import { addEnrollment, removeEnrollment, setEnrollments } from "./Courses/Enrollments/reducer";
 import * as enrollmentClient from "./Courses/Enrollments/client";
 import { fetchAllCourses } from "./Courses/client";
-import { useEffect } from "react";
 
 export default function Dashboard({
   courses,
@@ -27,6 +22,7 @@ export default function Dashboard({
 }) {
   const [allCourses, setAllCourses] = useState<any[]>([]);
   const [showAllCourses, setShowAllCourses] = useState(false);
+  const [enrolledCourses, setEnrolledCourses] = useState<any[]>([]);
   const dispatch = useDispatch();
   const { currentUser } = useSelector((state: any) => state.accountReducer);
   const { enrollments } = useSelector((state: any) => state.enrollmentsReducer);
@@ -38,15 +34,22 @@ export default function Dashboard({
     );
   };
 
+  // Update enrolledCourses whenever enrollments change
+  useEffect(() => {
+    const updateEnrolledCourses = () => {
+      const enrolled = allCourses.filter((course) => isEnrolled(course._id));
+      setEnrolledCourses(enrolled);
+    };
+    updateEnrolledCourses();
+  }, [enrollments, allCourses]);
+
   const handleEnroll = async (courseId: string) => {
     try {
       await enrollmentClient.enrollInCourse(currentUser._id, courseId);
-      dispatch(
-        addEnrollment({
-          user: currentUser._id,
-          course: courseId,
-        })
-      );
+      dispatch(addEnrollment({
+        user: currentUser._id,
+        course: courseId,
+      }));
     } catch (error) {
       console.error("Failed to enroll:", error);
     }
@@ -55,44 +58,37 @@ export default function Dashboard({
   const handleUnenroll = async (courseId: string) => {
     try {
       await enrollmentClient.unenrollFromCourse(currentUser._id, courseId);
-      dispatch(
-        removeEnrollment({
-          user: currentUser._id,
-          course: courseId,
-        })
-      );
+      dispatch(removeEnrollment({
+        user: currentUser._id,
+        course: courseId,
+      }));
     } catch (error) {
       console.error("Failed to unenroll:", error);
     }
   };
 
-  const displayedCourses = showAllCourses
-    ? allCourses
-    : courses.filter((course) => isEnrolled(course._id));
-
-  const handleShowAllCourses = async () => {
-    setShowAllCourses((prev) => !prev);
-    if (!showAllCourses) {
-      try {
-        const data = await fetchAllCourses();
-        setAllCourses(data);
-      } catch (error) {
-        console.error("Failed to fetch all courses:", error);
-      }
-    }
-  };
-
+  // Load enrollments and all courses on component mount
   useEffect(() => {
-    const loadEnrollments = async () => {
+    const loadInitialData = async () => {
       try {
-        const data = await enrollmentClient.setEnrollments();
-        dispatch(setEnrollments(data));
+        const [enrollmentsData, coursesData] = await Promise.all([
+          enrollmentClient.setEnrollments(),
+          fetchAllCourses()
+        ]);
+        dispatch(setEnrollments(enrollmentsData));
+        setAllCourses(coursesData);
       } catch (error) {
-        console.error("Failed to load enrollments:", error);
+        console.error("Failed to load initial data:", error);
       }
     };
-    loadEnrollments();
+    loadInitialData();
   }, [dispatch]);
+
+  const toggleCourseDisplay = () => {
+    setShowAllCourses(!showAllCourses);
+  };
+
+  const displayedCourses = showAllCourses ? allCourses : enrolledCourses;
 
   return (
     <div id="wd-dashboard">
@@ -134,7 +130,10 @@ export default function Dashboard({
       {currentUser.role === "STUDENT" && (
         <div className="d-flex justify-content-between align-items-center">
           <h1>Dashboard</h1>
-          <button className="btn btn-primary" onClick={handleShowAllCourses}>
+          <button
+            className="btn btn-primary"
+            onClick={toggleCourseDisplay}
+          >
             {showAllCourses ? "Show Enrolled" : "Show All Courses"}
           </button>
         </div>
@@ -149,7 +148,7 @@ export default function Dashboard({
           <div key={course._id} className="col" style={{ width: "300px" }}>
             <div className="card rounded-3 overflow-hidden">
               <div className="position-relative">
-                <img src="/images/reactjs.png" width="100%" height={160} />
+                <img src="/images/reactjs.png" width="100%" height={160} alt="Course" />
                 <div className="card-body">
                   <h5 className="card-title">{course.name}</h5>
                   <p
