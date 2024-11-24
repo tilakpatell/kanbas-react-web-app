@@ -70,31 +70,30 @@ export default function Dashboard({
     ? allCourses
     : courses.filter((course) => isEnrolled(course._id));
 
-    const handleShowAllCourses = async () => {
-      setShowAllCourses((prev) => !prev);
-      if (!showAllCourses) {
-        try {
-          const data = await fetchAllCourses(); 
-          setAllCourses(data);
-        } catch (error) {
-          console.error("Failed to fetch all courses:", error);
-        }
+  const handleShowAllCourses = async () => {
+    setShowAllCourses((prev) => !prev);
+    if (!showAllCourses) {
+      try {
+        const data = await fetchAllCourses();
+        setAllCourses(data);
+      } catch (error) {
+        console.error("Failed to fetch all courses:", error);
+      }
+    }
+  };
+
+  useEffect(() => {
+    const loadEnrollments = async () => {
+      try {
+        const data = await enrollmentClient.setEnrollments();
+        dispatch(setEnrollments(data));
+      } catch (error) {
+        console.error("Failed to load enrollments:", error);
       }
     };
-    
-    useEffect(() => {
-      const loadEnrollments = async () => {
-        try {
-          const data = await enrollmentClient.setEnrollments(); // Fetch user-specific enrollments
-          dispatch(setEnrollments(data));
-        } catch (error) {
-          console.error("Failed to load enrollments:", error);
-        }
-      };
-      loadEnrollments();
-    }, [dispatch, currentUser._id]);
+    loadEnrollments();
+  }, [dispatch]);
 
-    
   return (
     <div id="wd-dashboard">
       {currentUser.role === "FACULTY" && (
