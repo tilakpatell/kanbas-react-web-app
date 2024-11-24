@@ -67,6 +67,26 @@ export default function TOC() {
         >
           My GitHub
         </a>
+        </li>
+        <li>
+        <a
+          id="wd-github2"
+          href="https://github.com/tilakpatell/kanbas-node-server-app"
+          target="_blank"
+          className="nav-link" rel="noreferrer"
+        >
+          Kanbas Server Github
+        </a>
+        </li>
+        <li>
+        <a
+          id="wd-server-link"
+          href="https://tilak-kanbas-node-server-app-2bbc94a08c20.herokuapp.com/"
+          target="_blank"
+          className="nav-link" rel="noreferrer"
+        >
+          Kanbas Server Link
+        </a>
       </li>
     </ul>
   );
