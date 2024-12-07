@@ -1,7 +1,6 @@
 import { useDispatch } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import { setCurrentUser } from "./reducer";
-import * as db from "../Database";
 import * as client from "./client";
 import { useState } from "react";
 
