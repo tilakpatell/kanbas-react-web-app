@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
-import * as courseClient from "./Courses/client";
-import * as accountClient from "./Account/client";
 
+
+// Dashboard.tsx
 export default function Dashboard({
   courses,
   course,
@@ -25,6 +25,7 @@ export default function Dashboard({
   updateEnrollment: (courseId: string, enrolled: boolean) => void;
 }) {
   const { currentUser } = useSelector((state: any) => state.accountReducer);
+  const isAdminOrFaculty = currentUser?.role === "FACULTY" || currentUser?.role === "ADMIN";
 
   return (
     <div id="wd-dashboard">
@@ -40,7 +41,7 @@ export default function Dashboard({
         )}
       </div>
 
-      {currentUser?.role === "FACULTY" && (
+      {isAdminOrFaculty && (
         <div className="card mb-4">
           <div className="card-body">
             <h5>New Course</h5>
@@ -92,7 +93,7 @@ export default function Dashboard({
                   {course.description}
                 </p>
 
-                {currentUser?.role === "FACULTY" ? (
+                {isAdminOrFaculty ? (
                   <div>
                     <Link
                       to={`/Kanbas/Courses/${course._id}/Home`}
@@ -123,12 +124,14 @@ export default function Dashboard({
                         {course.enrolled ? "Unenroll" : "Enroll"}
                       </button>
                     ) : (
-                      <Link
-                        to={`/Kanbas/Courses/${course._id}/Home`}
-                        className="btn btn-primary"
-                      >
-                        Go
-                      </Link>
+                      course.enrolled && (
+                        <Link
+                          to={`/Kanbas/Courses/${course._id}/Home`}
+                          className="btn btn-primary"
+                        >
+                          Go
+                        </Link>
+                      )
                     )}
                   </div>
                 )}

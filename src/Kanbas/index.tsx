@@ -2,7 +2,7 @@ import { Routes, Route, Navigate } from "react-router";
 import Dashboard from "./Dashboard";
 import Courses from "./Courses";
 import { useEffect, useState } from "react";
-import "./styles.css"
+import "./styles.css";
 import KanbasNavigation from "./KanbasNavigation";
 import Account from "./Account";
 import * as userClient from "./Account/client";
@@ -23,10 +23,48 @@ export default function Kanbas() {
   });
   const [enrolling, setEnrolling] = useState<boolean>(false);
 
-  const findCoursesForUser = async () => {
+  useEffect(() => {
+    const findCoursesForUser = async () => {
+      try {
+        if (currentUser) {
+          if (enrolling) {
+            const allCourses = await courseClient.fetchAllCourses();
+            const enrolledCourses = await userClient.findCoursesForUser(currentUser._id);
+            const courses = allCourses.map((course: any) => ({
+              ...course,
+              enrolled: enrolledCourses.some((c: any) => c._id === course._id)
+            }));
+            setCourses(courses);
+          } else {
+            const courses = await userClient.findCoursesForUser(currentUser._id);
+            setCourses(courses.map((course: any) => ({ ...course, enrolled: true })));
+          }
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    };
+  
+    if (currentUser) {
+      findCoursesForUser();
+    }
+  }, [currentUser, enrolling, setCourses]);
+
+  const updateEnrollment = async (courseId: string, enrolled: boolean) => {
     try {
-      const courses = await userClient.findCoursesForUser(currentUser._id);
-      setCourses(courses);
+      if (enrolled) {
+        await userClient.enrollIntoCourse(currentUser._id, courseId);
+      } else {
+        await userClient.unenrollFromCourse(currentUser._id, courseId);
+      }
+      setCourses(
+        courses.map((course) => {
+          if (course._id === courseId) {
+            return { ...course, enrolled };
+          }
+          return course;
+        })
+      );
     } catch (error) {
       console.error(error);
     }
@@ -35,10 +73,12 @@ export default function Kanbas() {
   const fetchCourses = async () => {
     try {
       const allCourses = await courseClient.fetchAllCourses();
-      const enrolledCourses = await userClient.findCoursesForUser(currentUser._id);
+      const enrolledCourses = await userClient.findCoursesForUser(
+        currentUser._id
+      );
       const courses = allCourses.map((course: any) => ({
         ...course,
-        enrolled: enrolledCourses.some((c: any) => c._id === course._id)
+        enrolled: enrolledCourses.some((c: any) => c._id === course._id),
       }));
       setCourses(courses);
     } catch (error) {
@@ -74,9 +114,7 @@ export default function Kanbas() {
   const updateCourse = async () => {
     try {
       await courseClient.updateCourse(course);
-      setCourses(
-        courses.map((c) => c._id === course._id ? course : c)
-      );
+      setCourses(courses.map((c) => (c._id === course._id ? course : c)));
       setCourse({
         name: "New Course",
         number: "New Number",
@@ -89,36 +127,6 @@ export default function Kanbas() {
     }
   };
 
-  const updateEnrollment = async (courseId: string, enrolled: boolean) => {
-    try {
-      if (enrolled) {
-        await userClient.enrollIntoCourse(currentUser._id, courseId);
-      } else {
-        await userClient.unenrollFromCourse(currentUser._id, courseId);
-      }
-      setCourses(
-        courses.map((course) => {
-          if (course._id === courseId) {
-            return { ...course, enrolled }
-          }
-          return course;
-        })
-      );
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  useEffect(() => {
-    if (currentUser) {
-      if (enrolling) {
-        fetchCourses();
-      } else {
-        findCoursesForUser();
-      }
-    }
-  }, [currentUser, enrolling]);
-
   return (
     <div id="wd-kanbas">
       <Session>
@@ -126,27 +134,33 @@ export default function Kanbas() {
         <div className="wd-main-content-offset p-3">
           <Routes>
             <Route path="/" element={<Navigate to="Dashboard" />} />
-            <Route path="/Account/*" element={<Account/>} />
-            <Route path="/Dashboard" element={
-              <ProtectedRoute>
-                <Dashboard
-                  courses={courses}
-                  course={course}
-                  setCourse={setCourse}
-                  addNewCourse={addNewCourse}
-                  deleteCourse={deleteCourse}
-                  updateCourse={updateCourse}
-                  enrolling={enrolling}
-                  setEnrolling={setEnrolling}
-                  updateEnrollment={updateEnrollment}
-                />
-              </ProtectedRoute>
-            } />
-            <Route path="/Courses/:cid/*" element={
-              <ProtectedRoute>
-                <Courses courses={courses} />
-              </ProtectedRoute>
-            } />
+            <Route path="/Account/*" element={<Account />} />
+            <Route
+              path="/Dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard
+                    courses={courses}
+                    course={course}
+                    setCourse={setCourse}
+                    addNewCourse={addNewCourse}
+                    deleteCourse={deleteCourse}
+                    updateCourse={updateCourse}
+                    enrolling={enrolling}
+                    setEnrolling={setEnrolling}
+                    updateEnrollment={updateEnrollment}
+                  />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/Courses/:cid/*"
+              element={
+                <ProtectedRoute>
+                  <Courses courses={courses} />
+                </ProtectedRoute>
+              }
+            />
             <Route path="/Calendar" element={<h1>Calendar</h1>} />
             <Route path="/Inbox" element={<h1>Inbox</h1>} />
           </Routes>

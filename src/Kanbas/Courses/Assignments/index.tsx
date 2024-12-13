@@ -1,4 +1,3 @@
-// index.tsx
 import React, { useState, useEffect } from "react";
 import {
   FaPlus,
@@ -13,32 +12,32 @@ import { useParams, Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { deleteAssignment, setAssignments } from "./reducer";
 import * as client from "./client";
-import * as editorClient from "./editor-client";
 
 export default function Assignments() {
   const { cid } = useParams();
   const dispatch = useDispatch();
+  const { currentUser } = useSelector((state: any) => state.accountReducer);
   const { assignments } = useSelector((state: any) => state.assignmentReducer);
 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [assignmentToDelete, setAssignmentToDelete] = useState<any>(null);
 
-  const fetchAssignments = async () => {
-    try {
-      const assignments = await client.findAssignmentsForCourse(cid as string);
-      dispatch(setAssignments(assignments));
-    } catch (error) {
-      console.error("Error fetching assignments:", error);
-    }
-  };
-
-
+  const canEdit = currentUser?.role === "FACULTY" || currentUser?.role === "ADMIN";
 
   useEffect(() => {
+    const fetchAssignments = async () => {
+      try {
+        const assignments = await client.findAssignmentsForCourse(cid as string);
+        dispatch(setAssignments(assignments));
+      } catch (error) {
+        console.error("Error fetching assignments:", error);
+      }
+    };
+
     if (cid) {
       fetchAssignments();
     }
-  }, [cid]);
+  }, [cid, dispatch]);
 
   const handleDeleteClick = (assignment: any) => {
     setAssignmentToDelete(assignment);
@@ -47,7 +46,7 @@ export default function Assignments() {
 
   const removeAssignment = async (assignmentId: string) => {
     try {
-      await editorClient.deleteAssignment(assignmentId);
+      await client.deleteAssignment(assignmentId);
       dispatch(deleteAssignment(assignmentId));
     } catch (error) {
       console.error("Error deleting assignment:", error);
@@ -73,13 +72,17 @@ export default function Assignments() {
             <input className="form-control" placeholder="Search..." />
           </div>
         </div>
-        <button className="btn btn-secondary me-2">+ Group</button>
-        <Link
-          to={`/Kanbas/Courses/${cid}/Assignments/new`}
-          className="btn btn-danger"
-        >
-          + Assignment
-        </Link>
+        {canEdit && (
+          <>
+            <button className="btn btn-secondary me-2">+ Group</button>
+            <Link
+              to={`/Kanbas/Courses/${cid}/Assignments/new`}
+              className="btn btn-danger"
+            >
+              + Assignment
+            </Link>
+          </>
+        )}
       </div>
 
       <div className="card bg-light">
@@ -95,12 +98,14 @@ export default function Assignments() {
             >
               40% Finished
             </span>
-            <Link
-              to={`/Kanbas/Courses/${cid}/Assignments/new`}
-              className="btn btn-outline-secondary btn-sm ms-3"
-            >
-              <FaPlus />
-            </Link>
+            {canEdit && (
+              <Link
+                to={`/Kanbas/Courses/${cid}/Assignments/new`}
+                className="btn btn-outline-secondary btn-sm ms-3"
+              >
+                <FaPlus />
+              </Link>
+            )}
           </div>
         </div>
 
@@ -116,12 +121,16 @@ export default function Assignments() {
                   <FaBookOpen className="text-muted me-3" size={25} />
                   <div className="flex-grow-1">
                     <div className="mb-1">
-                      <Link
-                        to={`${assignment._id}`}
-                        className="text-decoration-none"
-                      >
+                      {canEdit ? (
+                        <Link
+                          to={`${assignment._id}`}
+                          className="text-decoration-none"
+                        >
+                          <strong>{assignment.title}</strong>
+                        </Link>
+                      ) : (
                         <strong>{assignment.title}</strong>
-                      </Link>
+                      )}
                     </div>
                     <div>
                       <span className="text-danger">Multiple Modules</span>
@@ -137,16 +146,18 @@ export default function Assignments() {
                       Due {assignment.dueDate} | {assignment.points} pts
                     </div>
                   </div>
-                  <div className="d-flex align-items-center">
-                    <FaCheckCircle className="text-success me-3" size={25} />
-                    <button
-                      className="btn btn-link text-danger me-2"
-                      onClick={() => handleDeleteClick(assignment)}
-                    >
-                      <FaTrash />
-                    </button>
-                    <FaEllipsisV className="text-muted" />
-                  </div>
+                  {canEdit && (
+                    <div className="d-flex align-items-center">
+                      <FaCheckCircle className="text-success me-3" size={25} />
+                      <button
+                        className="btn btn-link text-danger me-2"
+                        onClick={() => handleDeleteClick(assignment)}
+                      >
+                        <FaTrash />
+                      </button>
+                      <FaEllipsisV className="text-muted" />
+                    </div>
+                  )}
                 </div>
               </li>
             ))

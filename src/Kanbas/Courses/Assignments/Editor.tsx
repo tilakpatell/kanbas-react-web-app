@@ -3,8 +3,7 @@ import { FaCalendarAlt, FaTimes } from 'react-icons/fa';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { addAssignment, updateAssignment, setAssignments } from './reducer';
-import * as assignmentsClient from "./client";
-import * as editorClient from "./editor-client";
+import * as client from "./client";
 
 export default function AssignmentEditor() {
   const { cid, aid } = useParams();
@@ -15,17 +14,11 @@ export default function AssignmentEditor() {
   const assignmentList = useSelector((state: any) => 
     state.assignmentReducer?.assignments || []
   );
-
-  console.log("aid:", aid);
-  console.log("assignmentList:", assignmentList);
   
-  const existingAssignment = aid ? 
+  const existingAssignment = aid && aid !== 'new' ? 
     assignmentList.find((a: any) => a._id === aid) : null;
   
-  console.log("existingAssignment:", existingAssignment);
-
-  const [assignment, setAssignment] = useState(existingAssignment || {
-    _id: '',
+  const [assignment, setAssignment] = useState<any>(existingAssignment || {
     title: '',
     description: '',
     points: 100,
@@ -36,45 +29,32 @@ export default function AssignmentEditor() {
   });
 
   useEffect(() => {
-    const loadAssignment = async () => {
-      if (aid && aid !== 'new' && assignmentList.length === 0) {
+    const loadAssignments = async () => {
+      if (cid) {
         try {
-          const assignments = await assignmentsClient.findAssignmentsForCourse(cid as string);
+          const assignments = await client.findAssignmentsForCourse(cid);
           dispatch(setAssignments(assignments));
+          if (aid && aid !== 'new') {
+            const currentAssignment = assignments.find((a: any) => a._id === aid);
+            if (currentAssignment) {
+              setAssignment(currentAssignment);
+            }
+          }
         } catch (error) {
           console.error("Error loading assignments:", error);
         }
       }
     };
-    
-    loadAssignment();
-  }, [aid, cid, assignmentList.length, dispatch]);
-
-  useEffect(() => {
-    if (existingAssignment) {
-      setAssignment(existingAssignment);
-    }
-  }, [existingAssignment]);
-
-  useEffect(() => {
-    if (currentUser?.role !== "FACULTY") {
-      navigate(`/Kanbas/Courses/${cid}/Assignments`);
-    }
-  }, [currentUser, navigate, cid]);
-
-  const add = !existingAssignment;
-
-  if (currentUser?.role !== "FACULTY") {
-    return null;
-  }
+    loadAssignments();
+  }, [cid, aid, dispatch]);
 
   const handleSave = async () => {
     try {
-      if (add) {
-        const newAssignment = await assignmentsClient.createAssignment(cid as string, assignment);
+      if (!aid || aid === 'new') {
+        const newAssignment = await client.createAssignment(cid as string, assignment);
         dispatch(addAssignment(newAssignment));
       } else {
-        const updatedAssignment = await editorClient.updateAssignment(assignment);
+        const updatedAssignment = await client.updateAssignment(aid, assignment);
         dispatch(updateAssignment(updatedAssignment));
       }
       navigate(`/Kanbas/Courses/${cid}/Assignments`);
@@ -82,6 +62,16 @@ export default function AssignmentEditor() {
       console.error("Error saving assignment:", error);
     }
   };
+
+  const canEdit = currentUser?.role === "FACULTY" || currentUser?.role === "ADMIN";
+
+  if (!canEdit) {
+    return (
+      <div className="alert alert-warning">
+        You don't have permission to edit assignments.
+      </div>
+    );
+  }
 
   return (
     <div id="wd-assignments-editor" className="container mt-4">
@@ -92,7 +82,7 @@ export default function AssignmentEditor() {
         <input
           id="wd-name"
           className="form-control"
-          value={assignment.title}
+          value={assignment.title || ''}
           onChange={(e) => setAssignment({...assignment, title: e.target.value})}
           placeholder="Enter assignment name"
         />
@@ -106,7 +96,7 @@ export default function AssignmentEditor() {
           id="wd-description"
           className="form-control"
           style={{ height: "300px" }}
-          value={assignment.description}
+          value={assignment.description || ''}
           onChange={(e) => setAssignment({...assignment, description: e.target.value})}
           placeholder="Enter assignment description"
         />
@@ -120,7 +110,7 @@ export default function AssignmentEditor() {
             className="form-control"
             type="number"
             min="0"
-            value={assignment.points}
+            value={assignment.points || 100}
             onChange={(e) => setAssignment({...assignment, points: parseInt(e.target.value) || 0})}
           />
         </div>
@@ -146,7 +136,7 @@ export default function AssignmentEditor() {
                     type="datetime-local"
                     id="wd-due-date"
                     className="form-control"
-                    value={assignment.dueDate}
+                    value={assignment.dueDate || ''}
                     onChange={(e) => setAssignment({...assignment, dueDate: e.target.value})}
                   />
                   <span className="input-group-text"><FaCalendarAlt /></span>
@@ -161,7 +151,7 @@ export default function AssignmentEditor() {
                       type="datetime-local"
                       id="wd-available-from"
                       className="form-control"
-                      value={assignment.availableFrom}
+                      value={assignment.availableFrom || ''}
                       onChange={(e) => setAssignment({...assignment, availableFrom: e.target.value})}
                     />
                     <span className="input-group-text"><FaCalendarAlt /></span>
@@ -175,7 +165,7 @@ export default function AssignmentEditor() {
                       type="datetime-local"
                       id="wd-available-until"
                       className="form-control"
-                      value={assignment.availableUntil}
+                      value={assignment.availableUntil || ''}
                       onChange={(e) => setAssignment({...assignment, availableUntil: e.target.value})}
                     />
                     <span className="input-group-text"><FaCalendarAlt /></span>
