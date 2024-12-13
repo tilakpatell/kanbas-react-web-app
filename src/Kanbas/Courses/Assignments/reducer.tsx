@@ -1,4 +1,3 @@
-// src/Kanbas/Assignments/reducer.ts
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {

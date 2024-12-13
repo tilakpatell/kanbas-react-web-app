@@ -1,15 +1,20 @@
 import axios from "axios";
 const REMOTE_SERVER = process.env.REACT_APP_REMOTE_SERVER;
-const ASSIGNMENTS_API = `${REMOTE_SERVER}/api/assignments`;
+const COURSES_API = `${REMOTE_SERVER}/api/courses`;
 
 const API = axios.create({ withCredentials: true });
 
-export const deleteAssignment = async (assignmentId: string) => {
-  const response = await API.delete(`${ASSIGNMENTS_API}/${assignmentId}`);
+export const findAssignmentsForCourse = async (courseId: string) => {
+  const response = await API.get(`${COURSES_API}/${courseId}/assignments`);
   return response.data;
 };
 
-export const updateAssignment = async (assignment: any) => {
-  const response = await API.put(`${ASSIGNMENTS_API}/${assignment._id}`, assignment);
+export const createAssignment = async (courseId: string, assignment: any) => {
+  const response = await API.post(`${COURSES_API}/${courseId}/assignments`, assignment);
+  return response.data;
+};
+
+export const findAllAssignments = async () => {
+  const response = await API.get(`${COURSES_API}/assignments`);
   return response.data;
 };

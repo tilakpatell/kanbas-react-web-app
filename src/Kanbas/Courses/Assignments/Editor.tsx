@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { FaCalendarAlt, FaTimes } from 'react-icons/fa';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { addAssignment, updateAssignment } from './reducer';
-import * as client from "./client";
-import * as coursesClient from "../client";
+import { addAssignment, updateAssignment, setAssignments } from './reducer';
+import * as assignmentsClient from "./client";
+import * as editorClient from "./editor-client";
 
 export default function AssignmentEditor() {
   const { cid, aid } = useParams();
@@ -16,9 +16,14 @@ export default function AssignmentEditor() {
     state.assignmentReducer?.assignments || []
   );
 
-  const existingAssignment = aid !== 'new' ? 
+  console.log("aid:", aid);
+  console.log("assignmentList:", assignmentList);
+  
+  const existingAssignment = aid ? 
     assignmentList.find((a: any) => a._id === aid) : null;
   
+  console.log("existingAssignment:", existingAssignment);
+
   const [assignment, setAssignment] = useState(existingAssignment || {
     _id: '',
     title: '',
@@ -31,28 +36,50 @@ export default function AssignmentEditor() {
   });
 
   useEffect(() => {
+    const loadAssignment = async () => {
+      if (aid && aid !== 'new' && assignmentList.length === 0) {
+        try {
+          const assignments = await assignmentsClient.findAssignmentsForCourse(cid as string);
+          dispatch(setAssignments(assignments));
+        } catch (error) {
+          console.error("Error loading assignments:", error);
+        }
+      }
+    };
+    
+    loadAssignment();
+  }, [aid, cid, assignmentList.length, dispatch]);
+
+  useEffect(() => {
+    if (existingAssignment) {
+      setAssignment(existingAssignment);
+    }
+  }, [existingAssignment]);
+
+  useEffect(() => {
     if (currentUser?.role !== "FACULTY") {
       navigate(`/Kanbas/Courses/${cid}/Assignments`);
     }
   }, [currentUser, navigate, cid]);
+
+  const add = !existingAssignment;
 
   if (currentUser?.role !== "FACULTY") {
     return null;
   }
 
   const handleSave = async () => {
-    if (assignment.title && currentUser.role === "FACULTY") {
-      if (aid === 'new') {
-        const newAssignment = await coursesClient.createAssignmentForCourse(
-          cid as string, 
-          assignment
-        );
+    try {
+      if (add) {
+        const newAssignment = await assignmentsClient.createAssignment(cid as string, assignment);
         dispatch(addAssignment(newAssignment));
       } else {
-        const updatedAssignment = await client.updateAssignment(assignment);
+        const updatedAssignment = await editorClient.updateAssignment(assignment);
         dispatch(updateAssignment(updatedAssignment));
       }
       navigate(`/Kanbas/Courses/${cid}/Assignments`);
+    } catch (error) {
+      console.error("Error saving assignment:", error);
     }
   };
 

@@ -13,24 +13,25 @@ export default function ModulesControls({
   addModule: () => void;
 }) {
   const { currentUser } = useSelector((state: any) => state.accountReducer);
+  
   return (
     <div id="wd-modules-controls" className="text-nowrap">
-      {currentUser.role === "FACULTY" && (
+      {(currentUser.role === "FACULTY" || currentUser.role === "ADMIN") && (
         <>
           <button id="wd-add-module-btn" className="btn btn-lg btn-danger me-1 float-end">
             <FaPlus className="position-relative me-2" style={{ bottom: "1px" }} />
             Module
           </button>
           <div className="dropdown d-inline me-1 float-end">
-            <button id="wd-view-progress" className="btn btn-lg btn-secondary" type="button">
+            <button id="wd-view-progress" className="btn btn-lg btn-secondary me-2" type="button">
               View Progress
             </button>
-            <button id="wd-collapse-all" className="btn btn-lg btn-secondary" type="button">
+            <button id="wd-collapse-all" className="btn btn-lg btn-secondary me-2" type="button">
               Collapse All
             </button>
             <button
               id="wd-publish-all-btn"
-              className="btn btn-lg btn-secondary dropdown-toggle"
+              className="btn btn-lg btn-secondary dropdown-toggle me-1"
               type="button"
               data-bs-toggle="dropdown"
             >

@@ -9,6 +9,7 @@ import PeopleTable from "./People/Table";
 import { courses } from "../Database";
 
 
+
 export default function Courses({ courses }: { courses: any[]; }) {
   const { cid } = useParams();
   const course = courses.find((course) => course._id === cid);
